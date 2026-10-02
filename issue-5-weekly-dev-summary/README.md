@@ -12,3 +12,5 @@ The workflow fetches commits, closed issues, and merged PRs from the last seven 
 `validate_workflow.py` checks that the export is valid JSON, contains the required schedule/GitHub/Claude/Slack stages, uses the requested Claude model, exposes configurable repo/language/destination values, and guarantees all three GitHub fetches complete before aggregation.
 
 The submission machine has Node/npm but not a running n8n instance, so a successful real-instance execution screenshot is **not claimed**. The export is structurally validated locally; a real n8n import/execution remains the acceptance item that needs environment credentials.
+
+Fresh structural validation: `python validate_workflow.py` → **workflow contract: PASS**.
