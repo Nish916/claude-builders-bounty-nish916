@@ -2,65 +2,126 @@
   "name": "Weekly GitHub Dev Summary with Claude",
   "nodes": [
     {
-      "parameters": {"rule": {"interval": [{"field": "weeks", "weeksInterval": 1, "triggerAtDay": [5], "triggerAtHour": 17}] }},
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                5
+              ],
+              "triggerAtHour": 17
+            }
+          ]
+        }
+      },
       "id": "weekly-trigger",
       "name": "Friday 5pm",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0,0]
+      "position": [
+        0,
+        0
+      ]
     },
     {
       "parameters": {
-        "values": {"string": [
-          {"name": "repo", "value": "={{$env.GITHUB_REPO || 'owner/repo'}}"},
-          {"name": "language", "value": "={{$env.SUMMARY_LANGUAGE || 'EN'}}"},
-          {"name": "slackWebhook", "value": "={{$env.SLACK_WEBHOOK_URL}}"}
-        ]}
+        "values": {
+          "string": [
+            {
+              "name": "repo",
+              "value": "={{$env.GITHUB_REPO || 'owner/repo'}}"
+            },
+            {
+              "name": "language",
+              "value": "={{$env.SUMMARY_LANGUAGE || 'EN'}}"
+            },
+            {
+              "name": "slackWebhook",
+              "value": "={{$env.SLACK_WEBHOOK_URL}}"
+            },
+            {
+              "name": "slackChannel",
+              "value": "={{$env.SLACK_CHANNEL || ''}}"
+            }
+          ]
+        }
       },
       "id": "config",
       "name": "Config",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [220,0]
+      "position": [
+        220,
+        0
+      ]
     },
     {
       "parameters": {
         "url": "=https://api.github.com/repos/{{$json.repo}}/commits?since={{$now.minus({days:7}).toISO()}}",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "githubApi",
-        "options": {"response": {"response": {"responseFormat": "json"}}}
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
       },
       "id": "commits",
       "name": "GitHub Commits",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460,-220]
+      "position": [
+        460,
+        -220
+      ]
     },
     {
       "parameters": {
         "url": "=https://api.github.com/repos/{{$node['Config'].json.repo}}/issues?state=closed&since={{$now.minus({days:7}).toISO()}}&per_page=100",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "githubApi",
-        "options": {"response": {"response": {"responseFormat": "json"}}}
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
       },
       "id": "issues",
       "name": "Closed Issues",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460,0]
+      "position": [
+        460,
+        0
+      ]
     },
     {
       "parameters": {
         "url": "=https://api.github.com/repos/{{$node['Config'].json.repo}}/pulls?state=closed&sort=updated&direction=desc&per_page=100",
         "authentication": "predefinedCredentialType",
         "nodeCredentialType": "githubApi",
-        "options": {"response": {"response": {"responseFormat": "json"}}}
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
       },
       "id": "prs",
       "name": "Closed PRs",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [460,220]
+      "position": [
+        460,
+        220
+      ]
     },
     {
       "parameters": {
@@ -70,29 +131,52 @@
       "name": "Aggregate Week",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720,0]
+      "position": [
+        720,
+        0
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://api.anthropic.com/v1/messages",
         "sendHeaders": true,
-        "headerParameters": {"parameters": [
-          {"name": "x-api-key", "value": "={{$env.ANTHROPIC_API_KEY}}"},
-          {"name": "anthropic-version", "value": "2023-06-01"},
-          {"name": "content-type", "value": "application/json"}
-        ]},
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{$env.ANTHROPIC_API_KEY}}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
         "body": "={{ JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:`Write a concise weekly development narrative in ${$json.language}. Include highlights, shipped work, fixes, and next-watch items. Use only the supplied GitHub data; do not invent activity. Data:\n${JSON.stringify($json)}`} ]}) }}",
-        "options": {"response": {"response": {"responseFormat": "json"}}}
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
       },
       "id": "claude",
       "name": "Claude Summary",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [960,0]
+      "position": [
+        960,
+        0
+      ]
     },
     {
       "parameters": {
@@ -101,24 +185,99 @@
         "sendBody": true,
         "contentType": "raw",
         "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({text: $json.content?.[0]?.text || 'Weekly summary unavailable'}) }}"
+        "body": "={{ JSON.stringify({channel: $node['Config'].json.slackChannel || undefined, text: $json.content?.[0]?.text || 'Weekly summary unavailable'}) }}"
       },
       "id": "slack",
       "name": "Send to Slack",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1200,0]
+      "position": [
+        1200,
+        0
+      ]
     }
   ],
   "connections": {
-    "Friday 5pm": {"main": [[{"node":"Config","type":"main","index":0}]]},
-    "Config": {"main": [[{"node":"GitHub Commits","type":"main","index":0},{"node":"Closed Issues","type":"main","index":0},{"node":"Closed PRs","type":"main","index":0}]]},
-    "GitHub Commits": {"main": [[{"node":"Aggregate Week","type":"main","index":0}]]},
-    "Closed Issues": {"main": [[{"node":"Aggregate Week","type":"main","index":0}]]},
-    "Closed PRs": {"main": [[{"node":"Aggregate Week","type":"main","index":0}]]},
-    "Aggregate Week": {"main": [[{"node":"Claude Summary","type":"main","index":0}]]},
-    "Claude Summary": {"main": [[{"node":"Send to Slack","type":"main","index":0}]]}
+    "Friday 5pm": {
+      "main": [
+        [
+          {
+            "node": "Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Config": {
+      "main": [
+        [
+          {
+            "node": "GitHub Commits",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GitHub Commits": {
+      "main": [
+        [
+          {
+            "node": "Closed Issues",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Closed Issues": {
+      "main": [
+        [
+          {
+            "node": "Closed PRs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Closed PRs": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Week",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Week": {
+      "main": [
+        [
+          {
+            "node": "Claude Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude Summary": {
+      "main": [
+        [
+          {
+            "node": "Send to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": {"executionOrder": "v1"},
+  "settings": {
+    "executionOrder": "v1"
+  },
   "active": false
 }
