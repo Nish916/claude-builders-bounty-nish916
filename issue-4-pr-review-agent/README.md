@@ -13,4 +13,4 @@ The CLI fetches the diff with `gh pr diff`. When Claude Code is available it sen
 `Summary` (2-3 sentences), `Risks`, `Improvement suggestions`, and `Confidence` (`Low`, `Medium`, or `High`).
 
 ## Verification
-The local runner used for this submission does not have the Claude binary installed, so no Claude-generated result is claimed. The CLI parser/output contract is tested locally, and two real public PR diffs were exercised through the deterministic fallback; their outputs are committed in `samples/`.
+The local runner used for this submission does not have a real Claude binary installed, so no Claude-generated model result is claimed. The Claude execution path is nevertheless covered with an injected executable contract test proving `CLAUDE_BIN` is invoked with `-p` and its structured output is returned. Fresh test run: `python -m pytest -q issue-4-pr-review-agent/tests` → **3 passed**. Two real public PR diffs were also exercised through the deterministic fallback; their outputs are committed in `samples/`.
