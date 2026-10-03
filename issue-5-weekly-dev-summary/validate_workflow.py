@@ -45,3 +45,32 @@ assert "merged_at" in code
 assert "Date.now()-7*86400000" in code
 
 print("workflow contract: PASS")
+
+verification_path = pathlib.Path(__file__).with_name("verification_workflow.json")
+verification = json.loads(verification_path.read_text())
+verification_names = [n["name"] for n in verification["nodes"]]
+assert verification_names == [
+    "Manual verification",
+    "Authorized verification fixture",
+    "Mock Claude boundary",
+    "Verification receipt",
+]
+verification_raw = verification_path.read_text()
+for marker in [
+    "verification_mode",
+    "external_api_called:false",
+    "captured-not-sent",
+    "Claude and Slack intentionally mocked",
+]:
+    assert marker in verification_raw, marker
+
+receipt_path = pathlib.Path(__file__).with_name("verification_receipt.json")
+receipt = json.loads(receipt_path.read_text())
+assert receipt["runtime"] == "n8n 2.41.6"
+assert receipt["status"] == "success"
+assert receipt["finished"] is True
+assert receipt["output"]["status"] == "PASS"
+assert receipt["output"]["delivery"] == "captured-not-sent"
+assert set(receipt["node_statuses"].values()) == {"success"}
+
+print("verification contract: PASS")
