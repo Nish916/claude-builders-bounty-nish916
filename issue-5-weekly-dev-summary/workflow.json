@@ -27,26 +27,35 @@
     },
     {
       "parameters": {
-        "values": {
-          "string": [
+        "assignments": {
+          "assignments": [
             {
+              "id": "9e646e54-b5bf-4155-a5bb-885ce4831655",
               "name": "repo",
-              "value": "={{$env.GITHUB_REPO || 'owner/repo'}}"
+              "value": "={{$env.GITHUB_REPO || 'owner/repo'}}",
+              "type": "string"
             },
             {
+              "id": "b2d26cae-4239-4d47-8319-f3a4488e4002",
               "name": "language",
-              "value": "={{$env.SUMMARY_LANGUAGE || 'EN'}}"
+              "value": "={{$env.SUMMARY_LANGUAGE || 'EN'}}",
+              "type": "string"
             },
             {
+              "id": "07f31e23-e909-45ef-922d-584190287f31",
               "name": "slackWebhook",
-              "value": "={{$env.SLACK_WEBHOOK_URL}}"
+              "value": "={{$env.SLACK_WEBHOOK_URL}}",
+              "type": "string"
             },
             {
+              "id": "15d33441-eafe-4b6f-8cab-78ea1a328b9c",
               "name": "slackChannel",
-              "value": "={{$env.SLACK_CHANNEL || ''}}"
+              "value": "={{$env.SLACK_CHANNEL || ''}}",
+              "type": "string"
             }
           ]
-        }
+        },
+        "options": {}
       },
       "id": "config",
       "name": "Config",
@@ -60,14 +69,30 @@
     {
       "parameters": {
         "url": "=https://api.github.com/repos/{{$json.repo}}/commits?since={{$now.minus({days:7}).toISO()}}",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
+        "authentication": "none",
         "options": {
           "response": {
             "response": {
-              "responseFormat": "json"
+              "responseFormat": "text"
             }
           }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.GITHUB_TOKEN}}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
         }
       },
       "id": "commits",
@@ -82,14 +107,30 @@
     {
       "parameters": {
         "url": "=https://api.github.com/repos/{{$node['Config'].json.repo}}/issues?state=closed&since={{$now.minus({days:7}).toISO()}}&per_page=100",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
+        "authentication": "none",
         "options": {
           "response": {
             "response": {
-              "responseFormat": "json"
+              "responseFormat": "text"
             }
           }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.GITHUB_TOKEN}}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
         }
       },
       "id": "issues",
@@ -104,14 +145,30 @@
     {
       "parameters": {
         "url": "=https://api.github.com/repos/{{$node['Config'].json.repo}}/pulls?state=closed&sort=updated&direction=desc&per_page=100",
-        "authentication": "predefinedCredentialType",
-        "nodeCredentialType": "githubApi",
+        "authentication": "none",
         "options": {
           "response": {
             "response": {
-              "responseFormat": "json"
+              "responseFormat": "text"
             }
           }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$env.GITHUB_TOKEN}}"
+            },
+            {
+              "name": "Accept",
+              "value": "application/vnd.github+json"
+            },
+            {
+              "name": "X-GitHub-Api-Version",
+              "value": "2022-11-28"
+            }
+          ]
         }
       },
       "id": "prs",
@@ -125,7 +182,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const commits=$items('GitHub Commits').map(x=>x.json).flat(); const issues=$items('Closed Issues').map(x=>x.json).flat().filter(x=>!x.pull_request); const prs=$items('Closed PRs').map(x=>x.json).flat().filter(x=>x.merged_at && new Date(x.merged_at)>=new Date(Date.now()-7*86400000)); return [{json:{repo:$node['Config'].json.repo,language:$node['Config'].json.language,commits:commits.map(c=>({sha:c.sha?.slice(0,7),message:c.commit?.message,author:c.commit?.author?.name})),issues:issues.map(i=>({number:i.number,title:i.title,closed_at:i.closed_at})),prs:prs.map(p=>({number:p.number,title:p.title,merged_at:p.merged_at,user:p.user?.login}))}}];"
+        "jsCode": "const parse = (name) => $items(name).flatMap(x => { const raw = x.json?.data ?? x.json?.body ?? x.json; if (Array.isArray(raw)) return raw; if (typeof raw === 'string') { try { const v=JSON.parse(raw); return Array.isArray(v) ? v : [v]; } catch { return []; } } return raw && typeof raw === 'object' ? [raw] : []; }); const commits=parse('GitHub Commits'); const issues=parse('Closed Issues').filter(x=>!x.pull_request); const prs=parse('Closed PRs').filter(x=>x.merged_at && new Date(x.merged_at)>=new Date(Date.now()-7*86400000)); return [{json:{repo:$node['Config'].json.repo,language:$node['Config'].json.language,commits:commits.map(c=>({sha:c.sha?.slice(0,7),message:c.commit?.message,author:c.commit?.author?.name})),issues:issues.map(i=>({number:i.number,title:i.title,closed_at:i.closed_at})),prs:prs.map(p=>({number:p.number,title:p.title,merged_at:p.merged_at,user:p.user?.login}))}}];"
       },
       "id": "aggregate",
       "name": "Aggregate Week",
@@ -139,7 +196,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.anthropic.com/v1/messages",
+        "url": "={{$env.ANTHROPIC_API_URL || 'https://api.anthropic.com/v1/messages'}}",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -158,16 +215,16 @@
           ]
         },
         "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:`Write a concise weekly development narrative in ${$json.language}. Include highlights, shipped work, fixes, and next-watch items. Use only the supplied GitHub data; do not invent activity. Data:\n${JSON.stringify($json)}`} ]}) }}",
+        "contentType": "json",
         "options": {
           "response": {
             "response": {
               "responseFormat": "json"
             }
           }
-        }
+        },
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1200,messages:[{role:'user',content:'Write a concise weekly development narrative in ' + $json.language + '. Include highlights, shipped work, fixes, and next-watch items. Use only the supplied GitHub data; do not invent activity. Data:\\n' + JSON.stringify($json)}]}) }}"
       },
       "id": "claude",
       "name": "Claude Summary",
@@ -183,9 +240,9 @@
         "method": "POST",
         "url": "={{$node['Config'].json.slackWebhook}}",
         "sendBody": true,
-        "contentType": "raw",
-        "rawContentType": "application/json",
-        "body": "={{ JSON.stringify({channel: $node['Config'].json.slackChannel || undefined, text: $json.content?.[0]?.text || 'Weekly summary unavailable'}) }}"
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({channel: $node['Config'].json.slackChannel || undefined, text: $json.text}) }}"
       },
       "id": "slack",
       "name": "Send to Slack",
@@ -193,6 +250,19 @@
       "typeVersion": 4.2,
       "position": [
         1200,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw=$json; let payload=raw?.body ?? raw?.data ?? raw; if (typeof payload==='string') { try { payload=JSON.parse(payload); } catch {} } const text=payload?.content?.[0]?.text || 'Weekly summary unavailable'; return [{json:{text}}];"
+      },
+      "id": "extract-summary",
+      "name": "Extract Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1080,
         0
       ]
     }
@@ -265,6 +335,17 @@
       ]
     },
     "Claude Summary": {
+      "main": [
+        [
+          {
+            "node": "Extract Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Summary": {
       "main": [
         [
           {

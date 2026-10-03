@@ -11,6 +11,7 @@ for x in [
     "Closed PRs",
     "Aggregate Week",
     "Claude Summary",
+    "Extract Summary",
     "Send to Slack",
 ]:
     assert x in names, x
@@ -19,6 +20,7 @@ raw = p.read_text()
 for x in [
     "claude-sonnet-4-20250514",
     "GITHUB_REPO",
+    "GITHUB_TOKEN",
     "SUMMARY_LANGUAGE",
     "SLACK_WEBHOOK_URL",
     "SLACK_CHANNEL",
@@ -33,11 +35,19 @@ expected_chain = {
     "Closed Issues": "Closed PRs",
     "Closed PRs": "Aggregate Week",
     "Aggregate Week": "Claude Summary",
-    "Claude Summary": "Send to Slack",
+    "Claude Summary": "Extract Summary",
+    "Extract Summary": "Send to Slack",
 }
 for source, target in expected_chain.items():
     actual = data["connections"][source]["main"][0][0]["node"]
     assert actual == target, (source, actual, target)
+
+trigger = next(n for n in data["nodes"] if n["name"] == "Friday 5pm")
+interval = trigger["parameters"]["rule"]["interval"][0]
+assert interval["field"] == "weeks"
+assert interval["weeksInterval"] == 1
+assert interval["triggerAtDay"] == [5]
+assert interval["triggerAtHour"] == 17
 
 aggregate = next(n for n in data["nodes"] if n["name"] == "Aggregate Week")
 code = aggregate["parameters"]["jsCode"]
