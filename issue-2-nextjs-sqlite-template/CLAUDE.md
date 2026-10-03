@@ -134,6 +134,40 @@ Before declaring work complete, run lint + typecheck + relevant tests. For schem
 - **No mutation followed by full-page cache invalidation by default** — revalidate only affected data.
 - **No new dependency for a trivial helper** — every dependency adds maintenance and supply-chain cost.
 
+## Rule rationale ledger
+
+- **Stack and versions:** one fixed baseline avoids framework/runtime ambiguity and lets Claude make changes without repeatedly asking which conventions apply.
+
+- **Project structure:** routing, services, persistence, validation, and UI have distinct homes so code ownership is obvious and coupling stays low.
+
+- **Server/client boundary:** privileged code stays server-only to prevent secrets, filesystem access, or DB behavior from leaking into browser bundles.
+
+- **Database rules:** prepared statements, explicit columns, enforced foreign keys, and service-owned transactions preserve correctness and reduce injection/data-integrity risk.
+
+- **Migrations:** immutable, staged migrations make schema history reproducible and protect existing production data during destructive changes.
+
+- **Deployment driver choice:** better-sqlite3 assumes durable local storage; Turso/libSQL avoids pretending ephemeral serverless files are durable.
+
+- **Runtime validation:** TypeScript disappears at runtime, so Zod guards every untrusted boundary before business logic or persistence.
+
+- **Server Actions:** authentication, authorization, validation, and narrow invalidation belong inside the server mutation boundary because client visibility is never security.
+
+- **Naming conventions:** predictable names make files, schemas, DTOs, and use-cases discoverable without extra project-specific explanation.
+
+- **Commands and completion checks:** lint, typecheck, tests, and migration checks convert assumptions into executable proof before work is declared done.
+
+- **Testing rules:** regression and integration coverage verify behavior closest to the risk while keeping slower E2E coverage focused on critical flows.
+
+- **Error handling and observability:** typed expected failures plus boundary logging preserve debuggability without leaking sensitive internals.
+
+- **Security defaults:** server-side authorization, secret isolation, rate limits, and webhook verification defend boundaries the client cannot be trusted to enforce.
+
+- **Component patterns:** Server Components and composition minimize unnecessary client JavaScript and keep data access near trusted server code.
+
+- **Anti-patterns:** every prohibited practice listed below corresponds to a concrete security, reliability, maintainability, or deployment failure mode stated inline.
+
+
+
 ## Change protocol for Claude Code
 1. Read the closest existing implementation and tests before editing.
 2. State the smallest coherent change; avoid unrelated refactors.
