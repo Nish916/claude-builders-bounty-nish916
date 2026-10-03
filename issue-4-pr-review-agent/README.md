@@ -14,4 +14,8 @@ The CLI fetches the diff with `gh pr diff`. When Claude Code is available it sen
 `Summary` (2-3 sentences), `Risks`, `Improvement suggestions`, and `Confidence` (`Low`, `Medium`, or `High`).
 
 ## Verification
-The local runner used for this submission does not have a real Claude binary installed, so no Claude-generated model result is claimed. The Claude execution path is nevertheless covered with an injected executable contract test proving `CLAUDE_BIN` is invoked with `-p` and its structured output is returned. Fresh test run: `python -m pytest -q issue-4-pr-review-agent/tests` → **3 passed**. Fresh installer/CLI smoke: isolated `HOME`, `bash install.sh` → exit 0; installed `claude-review --help` → exit 0. Two real public PR diffs were also exercised through the deterministic fallback; their outputs are committed in `samples/`.
+Official Claude Code **2.1.288** is now exercised through the real CLI path. `claude_review.py --pr https://github.com/claude-builders-bounty/claude-builders-bounty/pull/4666` fetched the real GitHub diff, invoked the official `claude -p` binary, and exited 0 with the required structured Markdown. See `evidence/official-claude-code-run.md`, `evidence/official-claude-code-receipt.json`, and `samples/official-claude-code-pr4666.md`.
+
+The verification machine was not logged into Anthropic, so the real binary was routed to a local deterministic Anthropic-compatible endpoint; no live Anthropic model call is claimed. The request trace confirms the official `claude-cli/2.1.288` user agent, streaming `POST /v1/messages?beta=true`, and that the real PR diff was present in the prompt.
+
+Fresh test run: `python -m pytest -q issue-4-pr-review-agent/tests` → **5 passed**. The CLI now also validates Claude's required headings/confidence value and falls back deterministically if Claude returns malformed output.

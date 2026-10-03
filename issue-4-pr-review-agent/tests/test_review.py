@@ -32,3 +32,33 @@ def test_claude_binary_path_is_used(monkeypatch):
         assert out is not None
         assert "## Summary" in out
         assert "## Confidence\nHigh" in out
+
+def test_invalid_claude_output_falls_back(monkeypatch):
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = pathlib.Path(tmp) / 'claude'
+        fake.write_text(
+            '#!/usr/bin/env python3\n'
+            "print('unstructured answer')\n",
+            encoding='utf-8',
+        )
+        fake.chmod(fake.stat().st_mode | stat.S_IXUSR)
+        monkeypatch.setenv('CLAUDE_BIN', str(fake))
+        assert m.review_with_claude('diff --git a/a b/a\n+safe change\n') is None
+
+
+def test_valid_review_contract():
+    good = '''## Summary
+Two sentences. Second sentence.
+
+## Risks
+- None identified.
+
+## Improvement suggestions
+- None.
+
+## Confidence
+High
+'''
+    assert m.valid_review(good)
+    assert not m.valid_review(good.replace('High', 'Very High'))
+    assert not m.valid_review('## Summary\nOnly one section\n')

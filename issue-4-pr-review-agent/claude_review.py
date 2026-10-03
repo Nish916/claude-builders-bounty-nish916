@@ -25,13 +25,26 @@ def fallback_review(diff):
     conf='High' if files<=3 and adds+dels<=150 else 'Medium'
     return f'''## Summary\nThis PR changes {files} file(s) with approximately {adds} added and {dels} removed lines. The fallback reviewer summarizes only signals visible in the diff and does not infer unobserved runtime behavior.\n\n## Risks\n''' + ''.join(f'- {x}\n' for x in risks) + '\n## Improvement suggestions\n' + ''.join(f'- {x}\n' for x in suggestions) + f'\n## Confidence\n{conf}\n'
 
+def valid_review(text):
+    required = [
+        '## Summary',
+        '## Risks',
+        '## Improvement suggestions',
+        '## Confidence',
+    ]
+    if not text or any(h not in text for h in required):
+        return False
+    m = re.search(r'## Confidence\s*\n\s*(Low|Medium|High)\s*$', text, re.M)
+    return bool(m)
+
 def review_with_claude(diff):
     binary=os.environ.get('CLAUDE_BIN','claude')
     if not shutil.which(binary): return None
     prompt='Review this PR diff using the pr-reviewer format.\n\n'+diff
     cp=subprocess.run([binary,'-p',prompt],capture_output=True,text=True)
     if cp.returncode!=0: return None
-    return cp.stdout.strip()+'\n'
+    out=cp.stdout.strip()+'\n'
+    return out if valid_review(out) else None
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument('--pr',required=True); ap.add_argument('--fallback-only',action='store_true'); a=ap.parse_args()
