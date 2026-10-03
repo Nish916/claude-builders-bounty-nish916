@@ -11,6 +11,10 @@ The workflow fetches commits, closed issues, and merged PRs from the last seven 
 ## Verification
 `validate_workflow.py` checks that the export is valid JSON, contains the required schedule/GitHub/Claude/Slack stages, uses the requested Claude model, exposes configurable repo/language/destination values, and guarantees all three GitHub fetches complete before aggregation.
 
-The submission machine has Node/npm but not a running n8n instance, so a successful real-instance execution screenshot is **not claimed**. The export is structurally validated locally; a real n8n import/execution remains the acceptance item that needs environment credentials.
+The production workflow remains credential-bound. To make import and execution reviewable without publishing secrets or incurring API spend, `verification_workflow.json` is a separate credential-free workflow that preserves the summary data shape, mocks the Claude boundary, and captures the delivery instead of sending it.
 
-Fresh structural validation: `python validate_workflow.py` → **workflow contract: PASS**.
+It was imported and executed end-to-end in **n8n 2.41.6** on 2026-10-03. All four nodes completed successfully and the last node emitted `status: PASS` plus `delivery: captured-not-sent`. See the [rendered n8n CLI evidence](verification-n8n-execution.svg) and machine-readable [execution receipt](verification_receipt.json).
+
+Evidence boundary: this proves real n8n importability and node execution. It does **not** claim a live Anthropic API call or Slack delivery. A production run still requires the reviewer's own GitHub credential, Anthropic key, and Slack webhook.
+
+Fresh validation: `python validate_workflow.py` → **workflow contract: PASS** and **verification contract: PASS**.
